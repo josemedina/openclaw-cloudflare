@@ -22,7 +22,7 @@ RUN ARCH="$(dpkg --print-architecture)" \
 
 # Install OpenClaw
 # Pin to specific version for reproducible builds
-RUN npm install -g openclaw@2026.3.23-2 \
+RUN npm install -g openclaw@2026.4.29 \
     && openclaw --version
 
 # Use /home/openclaw as the home directory instead of /root.
@@ -36,7 +36,7 @@ RUN mkdir -p /home/openclaw/.openclaw \
     && ln -s /home/openclaw/clawd /root/clawd
 
 # Copy startup script
-# Build cache bust: 2026-03-26-v32-home-dir
+# Build cache bust: 2026-05-01-tessera-v1-openclaw-2026.4.29
 COPY start-openclaw.sh /usr/local/bin/start-openclaw.sh
 RUN chmod +x /usr/local/bin/start-openclaw.sh
 
