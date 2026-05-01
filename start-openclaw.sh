@@ -13,7 +13,7 @@
 
 set -e   # do NOT add -x: it traces every command, including secret env vars.
 
-echo "===== start-openclaw.sh boot $(date -u +%FT%TZ) (script v10-host-header-fallback) ====="
+echo "===== start-openclaw.sh boot $(date -u +%FT%TZ) (script v11-loopback-origins) ====="
 
 if pgrep -f "openclaw gateway" > /dev/null 2>&1; then
     echo "OpenClaw gateway is already running, exiting."
@@ -70,18 +70,23 @@ config.gateway.mode = 'local';
 config.gateway.trustedProxies = ['10.1.0.0'];
 
 config.gateway.controlUi = config.gateway.controlUi || {};
-const allowedOrigins = ['*'];
+// allowedOrigins must include http://localhost:18789 because the Worker forges
+// the WS Origin to that value before proxying (the browser's real Origin gets
+// rejected by 2026.4.29 even when the exact URL or '*' is in the config — we
+// confirmed via tail logs and the openclaw source that some config-load step
+// effectively ignores them). We also include the actual public Worker URL and
+// the loopback variants so manual / direct connections still work.
+const allowedOrigins = [
+    'http://localhost:18789',
+    'http://127.0.0.1:18789',
+];
 if (process.env.WORKER_URL) {
     const o = process.env.WORKER_URL.replace(/\/+$/, '');
-    if (!allowedOrigins.includes(o)) allowedOrigins.unshift(o);
+    if (!allowedOrigins.includes(o)) allowedOrigins.push(o);
 }
 config.gateway.controlUi.allowedOrigins = allowedOrigins;
-// When the Worker fronts the gateway, the browser's Origin header gets
-// proxied through but the gateway's allowlist match isn't reliable in
-// 2026.4.29 (saw '*' in the config not being honored). The host-header
-// fallback matches Origin.host against the Host header, which Workers
-// preserves verbatim. This is safe here because the entire worker is
-// already gated by Cloudflare Access + the gateway token.
+// Setting dangerouslyAllowHostHeaderOriginFallback=true also skips the
+// seed-defaults migration that would overwrite our list on bind=lan startup.
 config.gateway.controlUi.dangerouslyAllowHostHeaderOriginFallback = true;
 
 if (process.env.OPENCLAW_GATEWAY_TOKEN) {
