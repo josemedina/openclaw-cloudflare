@@ -27,6 +27,26 @@ echo "Config directory: $CONFIG_DIR"
 mkdir -p "$CONFIG_DIR"
 
 # ============================================================
+# VERSION SENTINEL — re-onboard when openclaw version changes
+# ============================================================
+# The container disk persists across deploys (DO sticky storage), so a config
+# written by one openclaw version can survive into a newer version that has a
+# stricter schema, leaving the gateway unable to start. Track the writing
+# version in a sentinel file; when it doesn't match, archive the old config
+# and force a fresh onboard. Paired-device state lives in the workspace dir,
+# not in openclaw.json, so we don't lose it.
+VERSION_MARKER="$CONFIG_DIR/.openclaw-version"
+CURRENT_OPENCLAW_VERSION="$(openclaw --version 2>/dev/null | head -1)"
+PREV_OPENCLAW_VERSION=""
+[ -f "$VERSION_MARKER" ] && PREV_OPENCLAW_VERSION="$(cat "$VERSION_MARKER")"
+
+if [ -f "$CONFIG_FILE" ] && [ -n "$PREV_OPENCLAW_VERSION" ] && [ "$PREV_OPENCLAW_VERSION" != "$CURRENT_OPENCLAW_VERSION" ]; then
+    BACKUP="$CONFIG_FILE.bak.$(date +%s)"
+    echo "OpenClaw version changed ($PREV_OPENCLAW_VERSION -> $CURRENT_OPENCLAW_VERSION), archiving config to $BACKUP and re-onboarding"
+    mv "$CONFIG_FILE" "$BACKUP"
+fi
+
+# ============================================================
 # ONBOARD (only if no config exists yet)
 # ============================================================
 if [ ! -f "$CONFIG_FILE" ]; then
@@ -66,6 +86,9 @@ if [ ! -f "$CONFIG_FILE" ]; then
 else
     echo "Using existing config"
 fi
+
+# Stamp the version that wrote / is using this config so we can detect drift.
+echo "$CURRENT_OPENCLAW_VERSION" > "$VERSION_MARKER"
 
 # ============================================================
 # PATCH CONFIG (channels, gateway auth, trusted proxies)

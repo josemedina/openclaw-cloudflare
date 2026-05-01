@@ -36,7 +36,7 @@ RUN mkdir -p /home/openclaw/.openclaw \
     && ln -s /home/openclaw/clawd /root/clawd
 
 # Copy startup script
-# Build cache bust: 2026-05-01-tessera-v1-openclaw-2026.4.29
+# Build cache bust: 2026-05-01-tessera-v2-version-aware-onboard
 COPY start-openclaw.sh /usr/local/bin/start-openclaw.sh
 RUN chmod +x /usr/local/bin/start-openclaw.sh
 
