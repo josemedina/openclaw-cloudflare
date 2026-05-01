@@ -271,6 +271,10 @@ if (process.env.SLACK_BOT_TOKEN && process.env.SLACK_APP_TOKEN) {
 
 fs.writeFileSync(configPath, JSON.stringify(config, null, 2));
 console.log('Configuration patched successfully');
+console.log('DEBUG config.gateway: ' + JSON.stringify(config.gateway, null, 2));
+console.log('DEBUG agents.defaults: ' + JSON.stringify(config.agents && config.agents.defaults, null, 2));
+console.log('DEBUG models.providers keys: ' + Object.keys((config.models||{}).providers||{}).join(','));
+console.log('DEBUG WORKER_URL env: ' + (process.env.WORKER_URL || '<unset>'));
 EOFPATCH
 
 # ============================================================
