@@ -10,7 +10,13 @@
 # and restoreBackup() which use squashfs snapshots stored in R2.
 # No rclone or R2 credentials are needed inside the container.
 
-set -e
+set -ex
+
+# Diagnostic: prove the new script reached the container. Each rollout writes
+# a fresh timestamp here; if it's missing or stale, we know the runtime didn't
+# pick up the new image.
+echo "===== start-openclaw.sh boot $(date -u +%FT%TZ) (script v5-diag) ====="
+echo "$(date -u +%FT%TZ) v5-diag $$" >> /tmp/start-openclaw-boot.log || true
 
 if pgrep -f "openclaw gateway" > /dev/null 2>&1; then
     echo "OpenClaw gateway is already running, exiting."
