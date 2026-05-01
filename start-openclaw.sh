@@ -43,6 +43,14 @@ if [ ! -f "$CONFIG_FILE" ]; then
         AUTH_ARGS="--auth-choice apiKey"
     elif [ -n "$OPENAI_API_KEY" ]; then
         AUTH_ARGS="--auth-choice openai-api-key"
+    elif [ -n "$TESSERA_API_KEY" ]; then
+        # TesseraAI is OpenAI-compatible (chat completions). Onboard needs an
+        # OPENAI_API_KEY to succeed with openai-api-key auth — we re-export the
+        # Tessera key as OPENAI_API_KEY so onboard creates a valid baseline.
+        # The patch step below replaces the openai provider with a "tessera"
+        # provider pointing at TESSERA_BASE_URL and sets it as the primary model.
+        export OPENAI_API_KEY="$TESSERA_API_KEY"
+        AUTH_ARGS="--auth-choice openai-api-key"
     fi
 
     openclaw onboard --non-interactive --accept-risk \
@@ -158,6 +166,35 @@ if (process.env.CF_AI_GATEWAY_MODEL) {
     } else {
         console.warn('CF_AI_GATEWAY_MODEL set but missing required config (account ID, gateway ID, or API key)');
     }
+}
+
+// TesseraAI (OpenAI-compatible) provider override
+// When TESSERA_API_KEY + TESSERA_BASE_URL + TESSERA_MODEL are all set, inject a
+// "tessera" provider into models.providers and pin it as the agent's primary model.
+// This bypasses TesseraAI's lack of a Responses API by using openai-completions.
+if (process.env.TESSERA_API_KEY && process.env.TESSERA_BASE_URL && process.env.TESSERA_MODEL) {
+    const baseUrl = process.env.TESSERA_BASE_URL.replace(/\/+$/, '');
+    const modelId = process.env.TESSERA_MODEL;
+    const contextWindow = parseInt(process.env.TESSERA_CONTEXT_WINDOW || '131072', 10);
+    const maxTokens = parseInt(process.env.TESSERA_MAX_TOKENS || '8192', 10);
+
+    config.models = config.models || {};
+    config.models.providers = config.models.providers || {};
+    config.models.providers.tessera = {
+        baseUrl: baseUrl,
+        apiKey: process.env.TESSERA_API_KEY,
+        api: 'openai-completions',
+        models: [{ id: modelId, name: modelId, contextWindow: contextWindow, maxTokens: maxTokens }],
+    };
+    // Drop the placeholder openai provider that onboard created from the
+    // re-exported key — leaving it in place would expose the Tessera key under
+    // a misleading provider name and validate against the wrong baseUrl.
+    if (config.models.providers.openai) delete config.models.providers.openai;
+
+    config.agents = config.agents || {};
+    config.agents.defaults = config.agents.defaults || {};
+    config.agents.defaults.model = { primary: 'tessera/' + modelId };
+    console.log('TesseraAI provider injected: model=' + modelId + ' via ' + baseUrl);
 }
 
 // Telegram configuration

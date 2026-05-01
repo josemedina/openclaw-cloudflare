@@ -19,6 +19,14 @@ export interface OpenClawEnv {
   ANTHROPIC_API_KEY?: string;
   ANTHROPIC_BASE_URL?: string;
   OPENAI_API_KEY?: string;
+  // TesseraAI (OpenAI-compatible custom provider). When TESSERA_API_KEY is set,
+  // start-openclaw.sh injects a "tessera" provider into openclaw.json and uses
+  // it as the primary model for the default agent.
+  TESSERA_API_KEY?: string;
+  TESSERA_BASE_URL?: string; // e.g. https://api.tesseraai.cloud/v1
+  TESSERA_MODEL?: string; // e.g. Qwen/Qwen3.6-35B-A3B
+  TESSERA_CONTEXT_WINDOW?: string; // optional, default 131072
+  TESSERA_MAX_TOKENS?: string; // optional, default 8192
   MOLTBOT_GATEWAY_TOKEN?: string; // Gateway token (mapped to OPENCLAW_GATEWAY_TOKEN for container)
   DEV_MODE?: string; // Set to 'true' for local dev (skips CF Access auth + openclaw device pairing)
   E2E_TEST_MODE?: string; // Set to 'true' for E2E tests (skips CF Access auth but keeps device pairing)
@@ -26,6 +34,7 @@ export interface OpenClawEnv {
   SANDBOX_SLEEP_AFTER?: string; // How long before sandbox sleeps: 'never' (default), or duration like '10m', '1h'
   TELEGRAM_BOT_TOKEN?: string;
   TELEGRAM_DM_POLICY?: string;
+  TELEGRAM_DM_ALLOW_FROM?: string; // comma-separated numeric Telegram user IDs
   DISCORD_BOT_TOKEN?: string;
   DISCORD_DM_POLICY?: string;
   SLACK_BOT_TOKEN?: string;

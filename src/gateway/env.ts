@@ -24,6 +24,14 @@ export function buildEnvVars(env: OpenClawEnv): Record<string, string> {
   if (env.ANTHROPIC_API_KEY) envVars.ANTHROPIC_API_KEY = env.ANTHROPIC_API_KEY;
   if (env.OPENAI_API_KEY) envVars.OPENAI_API_KEY = env.OPENAI_API_KEY;
 
+  // TesseraAI (OpenAI-compatible). start-openclaw.sh handles the provider
+  // injection; the Worker's job is just to forward the secrets.
+  if (env.TESSERA_API_KEY) envVars.TESSERA_API_KEY = env.TESSERA_API_KEY;
+  if (env.TESSERA_BASE_URL) envVars.TESSERA_BASE_URL = env.TESSERA_BASE_URL;
+  if (env.TESSERA_MODEL) envVars.TESSERA_MODEL = env.TESSERA_MODEL;
+  if (env.TESSERA_CONTEXT_WINDOW) envVars.TESSERA_CONTEXT_WINDOW = env.TESSERA_CONTEXT_WINDOW;
+  if (env.TESSERA_MAX_TOKENS) envVars.TESSERA_MAX_TOKENS = env.TESSERA_MAX_TOKENS;
+
   // Legacy AI Gateway support: AI_GATEWAY_BASE_URL + AI_GATEWAY_API_KEY
   // When set, these override direct keys for backward compatibility
   if (env.AI_GATEWAY_API_KEY && env.AI_GATEWAY_BASE_URL) {
@@ -44,6 +52,7 @@ export function buildEnvVars(env: OpenClawEnv): Record<string, string> {
   if (env.DEV_MODE) envVars.OPENCLAW_DEV_MODE = env.DEV_MODE;
   if (env.TELEGRAM_BOT_TOKEN) envVars.TELEGRAM_BOT_TOKEN = env.TELEGRAM_BOT_TOKEN;
   if (env.TELEGRAM_DM_POLICY) envVars.TELEGRAM_DM_POLICY = env.TELEGRAM_DM_POLICY;
+  if (env.TELEGRAM_DM_ALLOW_FROM) envVars.TELEGRAM_DM_ALLOW_FROM = env.TELEGRAM_DM_ALLOW_FROM;
   if (env.DISCORD_BOT_TOKEN) envVars.DISCORD_BOT_TOKEN = env.DISCORD_BOT_TOKEN;
   if (env.DISCORD_DM_POLICY) envVars.DISCORD_DM_POLICY = env.DISCORD_DM_POLICY;
   if (env.SLACK_BOT_TOKEN) envVars.SLACK_BOT_TOKEN = env.SLACK_BOT_TOKEN;
