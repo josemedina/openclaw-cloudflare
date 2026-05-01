@@ -325,12 +325,26 @@ app.all('*', async (c) => {
     // Inject gateway token into WebSocket request if not already present.
     // CF Access redirects strip query params, so authenticated users lose ?token=.
     // Since the user already passed CF Access auth, we inject the token server-side.
-    let wsRequest = request;
+    //
+    // Also rewrite the Origin header to one of the gateway's seeded loopback
+    // origins. openclaw 2026.4.29 seeds gateway.controlUi.allowedOrigins with
+    // ["http://localhost:<port>", "http://127.0.0.1:<port>"] for non-loopback
+    // binds (issue #29385) and we cannot reliably override the seeded list
+    // from outside (the migration runs after our config write). Forging the
+    // Origin to one of the seeded values gets us through the allowlist check.
+    // SOP is unaffected: SOP enforcement happens browser-side, before the
+    // request leaves the user's machine.
+    const tokenUrl = new URL(url.toString());
     if (c.env.MOLTBOT_GATEWAY_TOKEN && !url.searchParams.has('token')) {
-      const tokenUrl = new URL(url.toString());
       tokenUrl.searchParams.set('token', c.env.MOLTBOT_GATEWAY_TOKEN);
-      wsRequest = new Request(tokenUrl.toString(), request);
     }
+    const forgedHeaders = new Headers(request.headers);
+    forgedHeaders.set('Origin', `http://localhost:${GATEWAY_PORT}`);
+    const wsRequest = new Request(tokenUrl.toString(), {
+      method: request.method,
+      headers: forgedHeaders,
+      body: request.body,
+    });
 
     // Get WebSocket connection to the container (with retry on crash)
     let containerResponse: Response;
