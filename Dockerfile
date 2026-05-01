@@ -39,8 +39,8 @@ RUN mkdir -p /home/openclaw/.openclaw \
 # Build cache bust: 2026-05-01-tessera-v7-config-dump
 # ENV change is required — it modifies the image config blob, guaranteeing a
 # unique manifest hash that wrangler can't elide as "image already exists".
-ENV TESSERA_BUILD_STAMP="2026-05-01T21-00-00Z-v9"
-RUN echo "tessera-v9-full-model-schema" > /etc/openclaw-build-stamp
+ENV TESSERA_BUILD_STAMP="2026-05-01T21-08-00Z-v10"
+RUN echo "tessera-v10-host-header-fallback" > /etc/openclaw-build-stamp
 COPY start-openclaw.sh /usr/local/bin/start-openclaw.sh
 RUN chmod +x /usr/local/bin/start-openclaw.sh
 

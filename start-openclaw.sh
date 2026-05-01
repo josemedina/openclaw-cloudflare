@@ -13,7 +13,7 @@
 
 set -e   # do NOT add -x: it traces every command, including secret env vars.
 
-echo "===== start-openclaw.sh boot $(date -u +%FT%TZ) (script v9-full-model-schema) ====="
+echo "===== start-openclaw.sh boot $(date -u +%FT%TZ) (script v10-host-header-fallback) ====="
 
 if pgrep -f "openclaw gateway" > /dev/null 2>&1; then
     echo "OpenClaw gateway is already running, exiting."
@@ -76,6 +76,13 @@ if (process.env.WORKER_URL) {
     if (!allowedOrigins.includes(o)) allowedOrigins.unshift(o);
 }
 config.gateway.controlUi.allowedOrigins = allowedOrigins;
+// When the Worker fronts the gateway, the browser's Origin header gets
+// proxied through but the gateway's allowlist match isn't reliable in
+// 2026.4.29 (saw '*' in the config not being honored). The host-header
+// fallback matches Origin.host against the Host header, which Workers
+// preserves verbatim. This is safe here because the entire worker is
+// already gated by Cloudflare Access + the gateway token.
+config.gateway.controlUi.dangerouslyAllowHostHeaderOriginFallback = true;
 
 if (process.env.OPENCLAW_GATEWAY_TOKEN) {
     config.gateway.auth = config.gateway.auth || {};
