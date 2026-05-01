@@ -36,8 +36,11 @@ RUN mkdir -p /home/openclaw/.openclaw \
     && ln -s /home/openclaw/clawd /root/clawd
 
 # Copy startup script
-# Build cache bust: 2026-05-01-tessera-v6-config-dump
-RUN echo "tessera-v6-config-dump" > /etc/openclaw-build-stamp
+# Build cache bust: 2026-05-01-tessera-v7-config-dump
+# ENV change is required — it modifies the image config blob, guaranteeing a
+# unique manifest hash that wrangler can't elide as "image already exists".
+ENV TESSERA_BUILD_STAMP="2026-05-01T20-37-00Z-v7"
+RUN echo "tessera-v7-config-dump" > /etc/openclaw-build-stamp
 COPY start-openclaw.sh /usr/local/bin/start-openclaw.sh
 RUN chmod +x /usr/local/bin/start-openclaw.sh
 
