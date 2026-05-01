@@ -13,7 +13,7 @@
 
 set -e   # do NOT add -x: it traces every command, including secret env vars.
 
-echo "===== start-openclaw.sh boot $(date -u +%FT%TZ) (script v11-loopback-origins) ====="
+echo "===== start-openclaw.sh boot $(date -u +%FT%TZ) (script v13-agent-models-registry) ====="
 
 if pgrep -f "openclaw gateway" > /dev/null 2>&1; then
     echo "OpenClaw gateway is already running, exiting."
@@ -192,6 +192,14 @@ if (!primaryModel) {
 
 config.agents = config.agents || {};
 config.agents.defaults = config.agents.defaults || {};
+// agents.defaults.models is the *registry* of models the agent can select.
+// Per https://docs.openclaw.ai/gateway/config-agents the dropdown / runtime
+// model resolution requires keys here matching "<provider>/<modelId>" from
+// models.providers; agents.defaults.model.primary alone is not enough because
+// the runtime falls back to the built-in catalog default (openai/gpt-5.5)
+// when the primary string isn't registered in agents.defaults.models.
+config.agents.defaults.models = config.agents.defaults.models || {};
+config.agents.defaults.models[primaryModel] = { alias: primaryModel.split('/').pop() };
 config.agents.defaults.model = { primary: primaryModel };
 
 // ---- channels ----
