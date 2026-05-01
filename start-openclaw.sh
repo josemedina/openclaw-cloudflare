@@ -13,7 +13,7 @@
 
 set -e   # do NOT add -x: it traces every command, including secret env vars.
 
-echo "===== start-openclaw.sh boot $(date -u +%FT%TZ) (script v8-no-onboard) ====="
+echo "===== start-openclaw.sh boot $(date -u +%FT%TZ) (script v9-full-model-schema) ====="
 
 if pgrep -f "openclaw gateway" > /dev/null 2>&1; then
     echo "OpenClaw gateway is already running, exiting."
@@ -86,7 +86,27 @@ if (process.env.OPENCLAW_DEV_MODE === 'true') {
 }
 
 // ---- providers / model ----
+// Schema reference: https://docs.openclaw.ai/gateway/config-tools#custom-providers-and-base-urls
+// 2026.4.29 requires the full model entry: id, name, reasoning, input, cost,
+// contextWindow, contextTokens, maxTokens. Missing fields make the gateway
+// exit silently after parsing. mode "merge" preserves the built-in catalog.
+function buildModelEntry(opts) {
+    const ctxWindow = opts.contextWindow;
+    return {
+        id: opts.id,
+        name: opts.name || opts.id,
+        reasoning: false,
+        input: ['text'],
+        cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
+        contextWindow: ctxWindow,
+        // contextTokens is the runtime budget; leave ~25% headroom for response.
+        contextTokens: Math.floor(ctxWindow * 0.75),
+        maxTokens: opts.maxTokens,
+    };
+}
+
 config.models = config.models || {};
+config.models.mode = config.models.mode || 'merge';
 config.models.providers = config.models.providers || {};
 
 let primaryModel = null;
@@ -98,12 +118,11 @@ if (process.env.TESSERA_API_KEY && process.env.TESSERA_BASE_URL && process.env.T
         baseUrl: process.env.TESSERA_BASE_URL.replace(/\/+$/, ''),
         apiKey: process.env.TESSERA_API_KEY,
         api: 'openai-completions',
-        models: [{
+        models: [buildModelEntry({
             id: modelId,
-            name: modelId,
             contextWindow: parseInt(process.env.TESSERA_CONTEXT_WINDOW || '131072', 10),
             maxTokens: parseInt(process.env.TESSERA_MAX_TOKENS || '8192', 10),
-        }],
+        })],
     };
     primaryModel = 'tessera/' + modelId;
     console.log('Provider: tessera/' + modelId);
@@ -114,12 +133,7 @@ else if (process.env.ANTHROPIC_API_KEY) {
     config.models.providers.anthropic = {
         apiKey: process.env.ANTHROPIC_API_KEY,
         api: 'anthropic-messages',
-        models: [{
-            id: 'claude-sonnet-4-5',
-            name: 'claude-sonnet-4-5',
-            contextWindow: 200000,
-            maxTokens: 8192,
-        }],
+        models: [buildModelEntry({ id: 'claude-sonnet-4-5', contextWindow: 200000, maxTokens: 8192 })],
     };
     if (process.env.ANTHROPIC_BASE_URL) {
         config.models.providers.anthropic.baseUrl = process.env.ANTHROPIC_BASE_URL;
@@ -133,12 +147,7 @@ else if (process.env.OPENAI_API_KEY) {
     config.models.providers.openai = {
         apiKey: process.env.OPENAI_API_KEY,
         api: 'openai-completions',
-        models: [{
-            id: 'gpt-4o',
-            name: 'gpt-4o',
-            contextWindow: 128000,
-            maxTokens: 8192,
-        }],
+        models: [buildModelEntry({ id: 'gpt-4o', contextWindow: 128000, maxTokens: 8192 })],
     };
     primaryModel = 'openai/gpt-4o';
     console.log('Provider: openai/gpt-4o');
@@ -158,7 +167,7 @@ else if (process.env.CLOUDFLARE_AI_GATEWAY_API_KEY && process.env.CF_AI_GATEWAY_
         baseUrl: baseUrl,
         apiKey: process.env.CLOUDFLARE_AI_GATEWAY_API_KEY,
         api: api,
-        models: [{ id: modelId, name: modelId, contextWindow: 131072, maxTokens: 8192 }],
+        models: [buildModelEntry({ id: modelId, contextWindow: 131072, maxTokens: 8192 })],
     };
     primaryModel = providerName + '/' + modelId;
     console.log('Provider: ' + primaryModel + ' via ' + baseUrl);
