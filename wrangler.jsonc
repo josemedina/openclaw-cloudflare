@@ -60,7 +60,7 @@
   "r2_buckets": [
     {
       "binding": "BACKUP_BUCKET",
-      "bucket_name": "openclaw-data",
+      "bucket_name": "openclawdrive",
     },
   ],
 
