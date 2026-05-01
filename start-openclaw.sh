@@ -40,9 +40,9 @@ CURRENT_OPENCLAW_VERSION="$(openclaw --version 2>/dev/null | head -1)"
 PREV_OPENCLAW_VERSION=""
 [ -f "$VERSION_MARKER" ] && PREV_OPENCLAW_VERSION="$(cat "$VERSION_MARKER")"
 
-if [ -f "$CONFIG_FILE" ] && [ -n "$PREV_OPENCLAW_VERSION" ] && [ "$PREV_OPENCLAW_VERSION" != "$CURRENT_OPENCLAW_VERSION" ]; then
+if [ -f "$CONFIG_FILE" ] && { [ -z "$PREV_OPENCLAW_VERSION" ] || [ "$PREV_OPENCLAW_VERSION" != "$CURRENT_OPENCLAW_VERSION" ]; }; then
     BACKUP="$CONFIG_FILE.bak.$(date +%s)"
-    echo "OpenClaw version changed ($PREV_OPENCLAW_VERSION -> $CURRENT_OPENCLAW_VERSION), archiving config to $BACKUP and re-onboarding"
+    echo "Config schema may be stale (prev=${PREV_OPENCLAW_VERSION:-<no marker>}, current=$CURRENT_OPENCLAW_VERSION), archiving to $BACKUP and re-onboarding"
     mv "$CONFIG_FILE" "$BACKUP"
 fi
 
